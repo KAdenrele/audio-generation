@@ -14,6 +14,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
     libsndfile1 \
     ninja-build \
     git \
+    build-essential \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /app
@@ -21,22 +22,27 @@ WORKDIR /app
 # Step 1: Clone LuxTTS
 RUN git clone https://github.com/ysharma3501/LuxTTS.git
 
-# Step 2: Install Build Tools
-RUN pip install --upgrade pip && \
+# Step 2: UPGRADE PIP & SETUPTOOLS (Crucial Step)
+# This fixes the "metadata-generation-failed" error by ensuring 
+# we can read modern package formats.
+RUN pip install --upgrade pip setuptools wheel && \
     pip install uv-build ninja
 
-# Step 3: Install Python dependencies
-# CRITICAL FIX: Added "numpy<2.0" to prevent binary incompatibility
-RUN pip install --no-cache-dir \
+# Step 3: Install Dependencies
+# We use --only-binary to prevent the "compiling from source" error.
+# We force numpy<2.0 to ensure compatibility with the NVIDIA container.
+RUN pip install --no-cache-dir --only-binary=:all: \
     "numpy<2.0" \
-    flash-attn --no-build-isolation \
-    transformers \
+    pandas \
     soundfile \
     tqdm \
-    pandas \
     accelerate \
-    pocket-tts \
     huggingface_hub \
+    transformers && \
+    # Install the rest normally
+    pip install --no-cache-dir \
+    flash-attn --no-build-isolation \
+    pocket-tts \
     qwen-tts \
     -r LuxTTS/requirements.txt
 
