@@ -19,12 +19,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# --- ENV 1: MAIN SYSTEM (Qwen, Lux, Flash-Attn) ---
-# We force numpy<2 to keep NVIDIA/Flash-Attn happy
-RUN git clone https://github.com/ysharma3501/LuxTTS.git && \
-    uv pip install --system --no-build-isolation \
+# 1. Clone LuxTTS
+RUN git clone https://github.com/ysharma3501/LuxTTS.git
+
+# 2. CRITICAL FIX: Install Build Tools FIRST
+# We install 'uv-build' here so it exists before we try to compile LuxTTS.
+RUN uv pip install --system uv-build ninja setuptools wheel
+
+# 3. Install Dependencies & LuxTTS
+# Now that uv-build is installed, --no-build-isolation will work perfectly.
+# We force "numpy<2" to keep the NVIDIA container happy.
+RUN uv pip install --system --no-build-isolation \
     "numpy<2" \
-    ninja \
     flash-attn \
     transformers \
     soundfile \
@@ -35,7 +41,7 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git && \
     qwen-tts \
     ./LuxTTS
 
-# Pre-download Lux weights (for main env)
+# 4. Pre-download Model Weights (Optional but recommended)
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
