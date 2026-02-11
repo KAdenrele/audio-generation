@@ -1,16 +1,15 @@
-# Use NVIDIA's PyTorch image (Best for GPU drivers)
+# Use NVIDIA's PyTorch image (Best for GPU drivers & Flash Attention)
 FROM nvcr.io/nvidia/pytorch:24.03-py3
 
-# 1. Install uv (The magic tool)
+# Install uv
 COPY --from=ghcr.io/astral-sh/uv:latest /uv /usr/local/bin/uv
 
-# Set environment variables
 ENV PYTHONUNBUFFERED=1 \
     CUDA_HOME=/usr/local/cuda \
     MAX_JOBS=4 \
     FLASH_ATTENTION_FORCE_BUILD=TRUE
 
-# 2. Install System Dependencies (ffmpeg, git, ninja)
+# Install system dependencies
 RUN apt-get update && apt-get install -y --no-install-recommends \
     ffmpeg \
     libsndfile1 \
@@ -20,14 +19,10 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 3. Clone LuxTTS
-RUN git clone https://github.com/ysharma3501/LuxTTS.git
-
-# 4. Use `uv` to install everything
-# --system: Installs into the current environment (keeps NVIDIA's PyTorch)
-# --no-build-isolation: Critical for Flash Attention to see CUDA
-# "numpy<2": Explicitly prevents the binary incompatibility error
-RUN uv pip install --system --no-build-isolation \
+# --- ENV 1: MAIN SYSTEM (Qwen, Lux, Flash-Attn) ---
+# We force numpy<2 to keep NVIDIA/Flash-Attn happy
+RUN git clone https://github.com/ysharma3501/LuxTTS.git && \
+    uv pip install --system --no-build-isolation \
     "numpy<2" \
     ninja \
     flash-attn \
@@ -36,17 +31,24 @@ RUN uv pip install --system --no-build-isolation \
     tqdm \
     pandas \
     accelerate \
-    pocket-tts \
     huggingface_hub \
     qwen-tts \
     ./LuxTTS
 
-# 5. Pre-download Model Weights
+# --- ENV 2: POCKET ISOLATION (Pocket TTS) ---
+# We create a virtualenv just for Pocket TTS that allows NumPy 2
+RUN uv venv /app/pocket_env && \
+    uv pip install -p /app/pocket_env/bin/python \
+    "numpy>=2" \
+    pocket-tts \
+    soundfile \
+    tqdm \
+    pandas
+
+# Pre-download Lux weights (for main env)
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
-# Copy your scripts
 COPY . .
 
-# Run
 CMD ["python", "main.py"]
