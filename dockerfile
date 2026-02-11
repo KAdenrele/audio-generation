@@ -28,6 +28,8 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git
 RUN pip install --no-cache-dir \
     ninja \
     flash-attn --no-build-isolation \
+    uv_build \
+    uvloop \
     transformers \
     soundfile \
     tqdm \
