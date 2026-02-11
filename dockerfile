@@ -1,4 +1,4 @@
-# Use NVIDIA's PyTorch image (Best for GPU drivers & Flash Attention)
+# Use NVIDIA's PyTorch image
 FROM nvcr.io/nvidia/pytorch:24.03-py3
 
 # Install uv
@@ -25,14 +25,20 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git
 # 2. Install Build Tools
 RUN uv pip install --system uv-build ninja setuptools wheel
 
-# 3. Install Dependencies & FORCE UPGRADES
-# FIX 1: "transformers>=4.48.0" forces an upgrade over the old NVIDIA version.
-# FIX 2: "accelerate>=0.28.0" prevents compatibility issues with the new transformers.
-# FIX 3: "scipy" is often required by AutoProcessor for audio tasks but missing in base images.
+# 3. CRITICAL FIX: Uninstall conflicting system transformers first
+# This ensures we get a clean, new install with all audio extras.
+RUN pip uninstall -y transformers
+
+# 4. Install Dependencies & Audio Backends
+# Added: librosa, sentencepiece, protobuf, torchaudio
 RUN uv pip install --system --no-build-isolation \
     "numpy<2" \
     "transformers>=4.48.0" \
     "accelerate>=0.28.0" \
+    librosa \
+    sentencepiece \
+    protobuf \
+    torchaudio \
     scipy \
     flash-attn \
     soundfile \
@@ -42,7 +48,7 @@ RUN uv pip install --system --no-build-isolation \
     qwen-tts \
     ./LuxTTS
 
-# 4. Pre-download Lux Weights
+# 5. Pre-download Lux Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
