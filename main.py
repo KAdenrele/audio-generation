@@ -38,11 +38,6 @@ def run_lux_batch(prompts):
     del model
     torch.cuda.empty_cache()
 
-def run_pocket_batch():
-    print("\n=== STARTING POCKET TTS (Subprocess) ===")
-    # We call the separate python executable in the 'pocket_env' folder
-    subprocess.run(["/app/pocket_env/bin/python", "pocket_worker.py"], check=True)
-
 if __name__ == "__main__":
     if not os.path.exists(PROMPT_FILE):
         print("Error: prompts.csv not found")
@@ -53,4 +48,3 @@ if __name__ == "__main__":
 
     run_qwen3_batch(prompts)
     run_lux_batch(prompts)
-    run_pocket_batch() # Calls the external worker

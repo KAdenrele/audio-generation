@@ -35,16 +35,6 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git && \
     qwen-tts \
     ./LuxTTS
 
-# --- ENV 2: POCKET ISOLATION (Pocket TTS) ---
-# We create a virtualenv just for Pocket TTS that allows NumPy 2
-RUN uv venv /app/pocket_env && \
-    uv pip install -p /app/pocket_env/bin/python \
-    "numpy>=2" \
-    pocket-tts \
-    soundfile \
-    tqdm \
-    pandas
-
 # Pre-download Lux weights (for main env)
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
