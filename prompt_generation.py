@@ -1,6 +1,9 @@
 from prompt_file import raw_text
 import pandas as pd
 import re
+import logging
+
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 def clean_and_split(text):
     # 1. Basic cleaning (remove extra whitespace)
@@ -17,9 +20,11 @@ def clean_and_split(text):
 prompts = clean_and_split(raw_text)
 
 # If you have fewer than 500, we duplicate/shuffle to reach the goal
-while len(prompts) < 500:
-    prompts.extend(prompts[:500-len(prompts)])
+if len(prompts) < 500:
+    logging.info(f"Duplicating prompts to reach 500. Current count: {len(prompts)}")
+    while len(prompts) < 500:
+        prompts.extend(prompts[:500-len(prompts)])
 
 df = pd.DataFrame({'text': prompts})
 df.to_csv("prompts.csv", index=False, quoting=1) # quoting=1 handles commas automatically
-print(f"Created prompts.csv with {len(df)} samples.")
+logging.info(f"Created prompts.csv with {len(df)} samples.")

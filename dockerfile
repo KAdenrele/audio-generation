@@ -1,4 +1,4 @@
-# Use NVIDIA's PyTorch image
+# Use NVIDIA's PyTorch image (PyTorch 2.3.0 | CUDA 12.4)
 FROM nvcr.io/nvidia/pytorch:24.03-py3
 
 # Install uv
@@ -25,12 +25,12 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git
 # 2. Install Build Tools
 RUN uv pip install --system uv-build ninja setuptools wheel
 
-# 3. CRITICAL FIX: Uninstall conflicting system transformers first
-# This ensures we get a clean, new install with all audio extras.
-RUN pip uninstall -y transformers
+# 3. Uninstall conflicting packages (Safety First)
+# We remove the system transformers/torchvision so we can install clean versions
+RUN pip uninstall -y transformers torchvision torchaudio
 
-# 4. Install Dependencies & Audio Backends
-# Added: librosa, sentencepiece, protobuf, torchaudio
+# 4. Install Main Dependencies (with upgrades)
+# We use standard PyPI for these
 RUN uv pip install --system --no-build-isolation \
     "numpy<2" \
     "transformers>=4.48.0" \
@@ -38,7 +38,6 @@ RUN uv pip install --system --no-build-isolation \
     librosa \
     sentencepiece \
     protobuf \
-    torchaudio \
     scipy \
     flash-attn \
     soundfile \
@@ -48,7 +47,15 @@ RUN uv pip install --system --no-build-isolation \
     qwen-tts \
     ./LuxTTS
 
-# 5. Pre-download Lux Weights
+# 5. CRITICAL FIX: Repair Torchvision & Torchaudio
+# We force-reinstall the specific versions compatible with PyTorch 2.3.0
+# using the official CUDA wheel index. This fixes the 'nms' error.
+RUN pip install --no-cache-dir \
+    torchvision==0.18.0 \
+    torchaudio==2.3.0 \
+    --index-url https://download.pytorch.org/whl/cu121
+
+# 6. Pre-download Lux Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
