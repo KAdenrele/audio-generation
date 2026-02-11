@@ -52,8 +52,8 @@ RUN uv pip install --system \
     torchaudio==2.3.0 \
     --index-url https://download.pytorch.org/whl/cu121
 
-# 6. Install Flash Attention (Force Build)
-RUN pip install flash-attn --no-build-isolation
+
+RUN MAX_JOBS=4 pip install flash-attn --no-build-isolation
 
 # 7. CRITICAL FIX: Install LuxTTS manually
 # Instead of relying on 'pip install .', we add it to PYTHONPATH
