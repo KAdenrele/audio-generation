@@ -23,8 +23,11 @@ def run_qwen3_batch(prompts):
     
     os.makedirs(f"{OUTPUT_DIR}/qwen3", exist_ok=True)
     for i, text in enumerate(tqdm(prompts, desc="Qwen3 Progress")):
-        wavs, sr = model.generate_custom_voice(text=text, speaker="Ryan")
-        sf.write(f"{OUTPUT_DIR}/qwen3/sample_{i}.wav", wavs[0], sr)
+        try:
+            wavs, sr = model.generate_custom_voice(text=text, speaker="Ryan")
+            sf.write(f"{OUTPUT_DIR}/qwen3/sample_{i}.wav", wavs[0], sr)
+        except Exception as e:
+            print(f"Qwen3 error at index {i}: {e}")
     
     # Free VRAM for the next model
     del model
@@ -38,8 +41,11 @@ def run_pocket_batch(prompts):
     
     os.makedirs(f"{OUTPUT_DIR}/pocket", exist_ok=True)
     for i, text in enumerate(tqdm(prompts, desc="Pocket Progress")):
-        audio_tensor = model.generate_audio(voice_state, text)
-        sf.write(f"{OUTPUT_DIR}/pocket/sample_{i}.wav", audio_tensor.numpy(), 24000)
+        try:
+            audio_tensor = model.generate_audio(voice_state, text)
+            sf.write(f"{OUTPUT_DIR}/pocket/sample_{i}.wav", audio_tensor.numpy(), 24000)
+        except Exception as e:
+            print(f"Pocket TTS error at index {i}: {e}")
 
 # 3. LUX TTS BATCH GENERATOR (Local Import)
 def run_lux_batch(prompts):

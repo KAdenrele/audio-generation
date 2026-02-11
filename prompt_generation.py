@@ -2,8 +2,6 @@ from prompt_file import raw_text
 import pandas as pd
 import re
 
-
-
 def clean_and_split(text):
     # 1. Basic cleaning (remove extra whitespace)
     text = re.sub(r'\s+', ' ', text)

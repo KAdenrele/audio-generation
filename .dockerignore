@@ -1,0 +1,12 @@
+# Ignore Dockerfile and local build artifacts
+Dockerfile
+.dockerignore
+
+# Ignore Python cache and virtual environments
+__pycache__/
+*.pyc
+.venv
+
+# Ignore git history and output directories
+.git
+generated_dataset/

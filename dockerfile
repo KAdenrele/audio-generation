@@ -23,12 +23,8 @@ ENV PATH="/root/.cargo/bin:$PATH"
 
 WORKDIR /app
 
-# Step 1: Clone LuxTTS repo to get its requirements
-RUN git clone https://github.com/ysharma3501/LuxTTS.git
-
-# Step 2: Install all Python dependencies in a single layer
-# This avoids numpy/pandas ABI incompatibility issues by letting `uv` resolve
-# all dependencies from all requirement files at once.
+# Step 1: Install Python dependencies using uv
+# We combine all pip installs into one layer for efficiency.
 RUN uv pip install --no-cache-dir \
     ninja \
     flash-attn --no-build-isolation \
@@ -37,19 +33,25 @@ RUN uv pip install --no-cache-dir \
     tqdm \
     pandas \
     accelerate \
-    pocket-tts \ 
+    pocket-tts \
     huggingface_hub \
-    qwen-tts \
-    -r LuxTTS/requirements.txt && \
-    uv pip install --no-cache-dir ./LuxTTS
+    qwen-tts
+
+# Step 2: Download and Install LuxTTS and its dependencies
+# Cloning from the official repo and installing in editable mode/package mode
+RUN git clone https://github.com/ysharma3501/LuxTTS.git && \
+    cd LuxTTS && \
+    uv pip install --no-cache-dir -r requirements.txt && \
+    uv pip install --no-cache-dir .
 
 # Step 3: Pre-download Model Weights
 # This ensures the 500-sample run doesn't wait for downloads at runtime
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
-# Copy your local generation scripts (like the batch_generate.py we wrote)
+# Copy your local application scripts
 COPY . .
+
 
 # Set entrypoint
 CMD ["python", "main.py"]
