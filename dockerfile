@@ -30,7 +30,8 @@ RUN pip install \
     pandas \
     accelerate \
     pocket-tts \
-    huggingface_hub
+    huggingface_hub \
+    qwen-tts
 
 # Step 3: Download and Install LuxTTS
 # Cloning from the official repo and installing in editable mode/package mode
