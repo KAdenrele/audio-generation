@@ -25,13 +25,15 @@ RUN git clone https://github.com/ysharma3501/LuxTTS.git
 # 2. Install Build Tools
 RUN uv pip install --system uv-build ninja setuptools wheel
 
-# 3. Install Dependencies & UPGRADE Transformers
-# FIX: Added "transformers>=4.48.0" to force an upgrade over the NVIDIA default.
-# FIX: Added "accelerate>=0.26.0" as Qwen3 often needs newer accelerate too.
+# 3. Install Dependencies & FORCE UPGRADES
+# FIX 1: "transformers>=4.48.0" forces an upgrade over the old NVIDIA version.
+# FIX 2: "accelerate>=0.28.0" prevents compatibility issues with the new transformers.
+# FIX 3: "scipy" is often required by AutoProcessor for audio tasks but missing in base images.
 RUN uv pip install --system --no-build-isolation \
     "numpy<2" \
     "transformers>=4.48.0" \
-    "accelerate>=0.26.0" \
+    "accelerate>=0.28.0" \
+    scipy \
     flash-attn \
     soundfile \
     tqdm \
@@ -40,7 +42,7 @@ RUN uv pip install --system --no-build-isolation \
     qwen-tts \
     ./LuxTTS
 
-# 4. Pre-download Model Weights
+# 4. Pre-download Lux Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
