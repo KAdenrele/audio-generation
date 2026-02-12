@@ -3,6 +3,7 @@ import soundfile as sf
 import os
 import pandas as pd
 from tqdm import tqdm
+import logging
 from qwen_tts import Qwen3TTSModel
 
 def run_qwen3_batch(prompts, output_dir="generated_dataset"):
@@ -12,19 +13,19 @@ def run_qwen3_batch(prompts, output_dir="generated_dataset"):
     target_dir = os.path.join(output_dir, "qwen3")
     os.makedirs(target_dir, exist_ok=True)
     
-    print(f"\n=== STARTING QWEN3-TTS (1.7B) ===")
-    print(f"Output Directory: {target_dir}")
+    logging.info("=== STARTING QWEN3-TTS (1.7B) ===")
+    logging.info(f"Output Directory: {target_dir}")
     
     try:
         # Load Model
         # Note: We use bfloat16 for speed and lower VRAM usage on modern GPUs
-        print("Loading model weights...")
+        logging.info("Loading model weights...")
         model = Qwen3TTSModel.from_pretrained(
             "Qwen/Qwen3-TTS-12Hz-1.7B-CustomVoice", 
             device_map="cuda", 
             dtype=torch.bfloat16
         )
-        print("Model loaded successfully.")
+        logging.info("Model loaded successfully.")
         
         # Generation Loop
         success_count = 0
@@ -48,23 +49,24 @@ def run_qwen3_batch(prompts, output_dir="generated_dataset"):
                 success_count += 1
                 
             except Exception as e:
-                print(f"\n[!] Error generating sample {i}: {e}")
+                logging.error(f"Error generating sample {i}: {e}")
                 # Optional: Save a dummy file or log the error to a file
         
-        print(f"\n=== QWEN3 COMPLETE ===")
-        print(f"Generated: {success_count}")
-        print(f"Skipped (Already Existed): {skip_count}")
+        logging.info("=== QWEN3 COMPLETE ===")
+        logging.info(f"Generated: {success_count}")
+        logging.info(f"Skipped (Already Existed): {skip_count}")
         
         # Cleanup VRAM
         del model
         torch.cuda.empty_cache()
         
     except Exception as e:
-        print(f"\n[CRITICAL] Qwen3 Failed to Load or Run: {e}")
+        logging.critical(f"Qwen3 Failed to Load or Run: {e}")
         raise e
 
 if __name__ == "__main__":
-    # Test block to run this script standalone
-    print("Running qwen_runner.py in standalone mode...")
+    # Test block
+    logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+    logging.info("Running qwen_runner.py in standalone mode...")
     test_prompts = ["Hello, this is a test of Qwen3 TTS.", "Generating audio is fun."]
     run_qwen3_batch(test_prompts)
