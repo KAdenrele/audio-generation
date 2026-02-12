@@ -1,5 +1,4 @@
-# Use NVIDIA's PyTorch image (Best for GPU drivers & Flash Attention)
-# Base: PyTorch 2.3.0 | CUDA 12.4
+# Use NVIDIA's PyTorch image (PyTorch 2.3.0 | CUDA 12.4)
 FROM nvcr.io/nvidia/pytorch:24.03-py3
 
 # Install uv
@@ -21,17 +20,16 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 1. Clone LuxTTS
-RUN git clone https://github.com/ysharma3501/LuxTTS.git
+# 1. FIXED: Clone LuxTTS to /opt (Safe from volume overrides)
+RUN git clone https://github.com/ysharma3501/LuxTTS.git /opt/LuxTTS
 
 # 2. Install Build Tools
 RUN uv pip install --system uv-build ninja setuptools wheel
 
-# 3. Clean environment (Remove conflicting versions)
+# 3. Clean environment
 RUN pip uninstall -y transformers torchvision torchaudio flash-attn
 
-# 4. Install Core Dependencies & Audio Backends
-# We force upgrade transformers/accelerate and pin numpy
+# 4. Install Dependencies
 RUN uv pip install --system --no-build-isolation \
     "numpy<2" \
     "transformers>=4.48.0" \
@@ -46,23 +44,20 @@ RUN uv pip install --system --no-build-isolation \
     huggingface_hub \
     qwen-tts
 
-# 5. Fix Torch Vision/Audio (Reinstall compatible versions)
+# 5. Fix Torch Vision/Audio
 RUN uv pip install --system \
     torchvision==0.18.0 \
     torchaudio==2.3.0 \
     --index-url https://download.pytorch.org/whl/cu121
 
+# 6. Install LuxTTS Requirements from /opt
+RUN uv pip install --system -r /opt/LuxTTS/requirements.txt
 
-#RUN MAX_JOBS=4 pip install flash-attn --no-build-isolation
+# 7. CRITICAL FIX: Add /opt/LuxTTS to PYTHONPATH
+# This makes 'from zipvoice.luxtts import LuxTTS' work globally
+ENV PYTHONPATH="/opt/LuxTTS:${PYTHONPATH}"
 
-# 7. CRITICAL FIX: Install LuxTTS manually
-# Instead of relying on 'pip install .', we add it to PYTHONPATH
-# This guarantees 'from zipvoice.luxtts import LuxTTS' works.
-ENV PYTHONPATH="${PYTHONPATH}:/app/LuxTTS"
-# We also install its requirements just in case
-RUN uv pip install --system -r LuxTTS/requirements.txt
-
-# 8. Pre-download Lux Weights
+# 8. Pre-download Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
