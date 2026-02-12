@@ -4,6 +4,8 @@ import soundfile as sf
 import os
 from tqdm import tqdm
 from qwen_tts import Qwen3TTSModel
+# This tells Python: "Look inside /app/LuxTTS for the zipvoice folder"
+sys.path.append(os.path.join(os.getcwd(), "LuxTTS"))
 from zipvoice.luxtts import LuxTTS 
 import logging
 import sys
