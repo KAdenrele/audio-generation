@@ -1,11 +1,17 @@
+import sys
+import os
+# This forces Python to look in /opt/LuxTTS regardless of where this script lives
+lux_docker_path = "/opt/LuxTTS"
+
+if os.path.exists(lux_docker_path) and lux_docker_path not in sys.path:
+    # insert(0) puts it at the absolute top of Python's search priority
+    sys.path.insert(0, lux_docker_path)
+
 import torch
 import soundfile as sf
-import os
-import sys
 from tqdm import tqdm
 from zipvoice.luxtts import LuxTTS
 import logging
-
 def run_lux_batch(prompts, output_dir="generated_dataset"):
     """
     Generates audio for a list of text prompts using Lux TTS.
@@ -13,14 +19,7 @@ def run_lux_batch(prompts, output_dir="generated_dataset"):
     target_dir = os.path.join(output_dir, "lux")
     os.makedirs(target_dir, exist_ok=True)
     
-    logging.info("=== STARTING LUX TTS ===")
-    
-    # 1. IMPORT FIX: Add the LuxTTS repo to Python path if needed
-    # This prevents the "No module named zipvoice" error
-    lux_repo_path = os.path.join(os.getcwd(), "LuxTTS")
-    if os.path.exists(lux_repo_path) and lux_repo_path not in sys.path:
-        sys.path.append(lux_repo_path)
-    
+    logging.info("=== STARTING LUX TTS ===")   
 
     try:
         # 2. Load Model
