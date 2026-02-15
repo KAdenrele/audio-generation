@@ -20,19 +20,18 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 
 WORKDIR /app
 
-# 2. Clone LuxTTS to /opt (Safe from volume overrides)
+# 2. Clone LuxTTS to /opt (Safe from volume overrides in /app)
 RUN git clone https://github.com/ysharma3501/LuxTTS.git /opt/LuxTTS
 
 # 3. Install Build Tools
-# We install these first so that when we build LuxTTS later, the tools exist.
 RUN uv pip install --system uv-build ninja setuptools wheel
 
 # 4. Uninstall Pre-installed Packages (Prevent conflicts)
 RUN pip uninstall -y transformers torchvision torchaudio flash-attn
 
 # 5. FAST INSTALL: Main Dependencies
-# REMOVED: --no-build-isolation (This was causing the slow 12min build)
-# uv will now download binary wheels for these, taking ~30 seconds instead of 12 minutes.
+# We REMOVE --no-build-isolation here. 
+# This makes this step take seconds instead of 12 minutes.
 RUN uv pip install --system \
     "numpy<2" \
     "transformers>=4.48.0" \
@@ -45,8 +44,7 @@ RUN uv pip install --system \
     tqdm \
     pandas \
     huggingface_hub \
-    qwen-tts \
-    chatterbox-tts
+    qwen-tts
 
 # 6. Fix Torch Vision/Audio (Reinstall compatible versions)
 RUN uv pip install --system \
@@ -57,10 +55,10 @@ RUN uv pip install --system \
 # 7. Install LuxTTS Dependencies
 RUN uv pip install --system -r /opt/LuxTTS/requirements.txt
 
-# 8. CRITICAL FIX: Install LuxTTS as a Package
-# Instead of PYTHONPATH, we install it in "editable" mode or direct mode.
-# --no-build-isolation is allowed HERE because we installed uv-build in Step 3.
-RUN uv pip install --system --no-build-isolation -e /opt/LuxTTS
+# 8. CRITICAL IMPORT FIX: PYTHONPATH
+# Instead of trying to "install" the LuxTTS folder (which is failing), 
+# we tell Python to look directly inside the clone for the 'zipvoice' folder.
+ENV PYTHONPATH="/opt/LuxTTS:${PYTHONPATH}"
 
 # 9. Pre-download Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
@@ -68,4 +66,5 @@ RUN python3 -c "from huggingface_hub import snapshot_download; \
 
 COPY . .
 
+# Final check: Ensure we are in the right place
 CMD ["python", "main.py"]
