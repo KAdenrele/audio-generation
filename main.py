@@ -3,7 +3,6 @@ import os
 import sys
 from src.qwen_runner import run_qwen3_batch
 from src.lux_runner import run_lux_batch
-from src.chatterbox_runner import run_chatterbox_batch
 import logging
 # from lux_runner import run_lux_batch
 
@@ -47,19 +46,11 @@ def main():
     #     logging.error(f"Qwen execution halted: {e}")
 
     #Run Lux
-    # try:
-    #     run_lux_batch(prompts, OUTPUT_DIR)
-    # except Exception as e:
-    #     logging.error(f"Skipping Lux due to error: {e}")
-
-    # 4. Run Chatterbox
     try:
-        if not os.path.exists(CHATTERBOX_REF_CLIP):
-            logging.warning(f"Chatterbox reference clip '{CHATTERBOX_REF_CLIP}' not found. Skipping.")
-        else:
-            run_chatterbox_batch(prompts, CHATTERBOX_REF_CLIP, OUTPUT_DIR)
+        run_lux_batch(prompts, OUTPUT_DIR)
     except Exception as e:
-        logging.error(f"Skipping Chatterbox due to error: {e}")
+        logging.error(f"Skipping Lux due to error: {e}")
+
 
 if __name__ == "__main__":
     main()
