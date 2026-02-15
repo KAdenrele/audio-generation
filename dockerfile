@@ -21,6 +21,7 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 WORKDIR /app
 
 # 2. Clone LuxTTS to /opt (Safe from volume overrides in /app)
+# This ensures it survives when you mount your local dev folder to /app
 RUN git clone https://github.com/ysharma3501/LuxTTS.git /opt/LuxTTS
 
 # 3. Install Build Tools
@@ -30,8 +31,6 @@ RUN uv pip install --system uv-build ninja setuptools wheel
 RUN pip uninstall -y transformers torchvision torchaudio flash-attn
 
 # 5. FAST INSTALL: Main Dependencies
-# We REMOVE --no-build-isolation here. 
-# This makes this step take seconds instead of 12 minutes.
 RUN uv pip install --system \
     "numpy<2" \
     "transformers>=4.48.0" \
@@ -44,7 +43,8 @@ RUN uv pip install --system \
     tqdm \
     pandas \
     huggingface_hub \
-    qwen-tts
+    qwen-tts \
+    chatterbox-tts
 
 # 6. Fix Torch Vision/Audio (Reinstall compatible versions)
 RUN uv pip install --system \
@@ -55,16 +55,16 @@ RUN uv pip install --system \
 # 7. Install LuxTTS Dependencies
 RUN uv pip install --system -r /opt/LuxTTS/requirements.txt
 
-# 8. CRITICAL IMPORT FIX: PYTHONPATH
-# Instead of trying to "install" the LuxTTS folder (which is failing), 
-# we tell Python to look directly inside the clone for the 'zipvoice' folder.
+# 8. THE GLOBAL IMPORT FIX
+# Adding /opt/LuxTTS to PYTHONPATH makes the 'zipvoice' module 
+# available to any script running in the container.
 ENV PYTHONPATH="/opt/LuxTTS:${PYTHONPATH}"
 
 # 9. Pre-download Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
     snapshot_download(repo_id='YatharthS/LuxTTS', allow_patterns=['*.bin', '*.json', '*.pth'])"
 
+# 10. Copy your local scripts (main.py, etc.)
 COPY . .
 
-# Final check: Ensure we are in the right place
 CMD ["python", "main.py"]
