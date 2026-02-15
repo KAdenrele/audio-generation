@@ -31,6 +31,7 @@ RUN uv pip install --system uv-build ninja setuptools wheel
 RUN pip uninstall -y transformers torchvision torchaudio flash-attn
 
 # 5. FAST INSTALL: Main Dependencies
+# FIX: Removed the trailing backslash after qwen-tts
 RUN uv pip install --system \
     "numpy<2" \
     "transformers>=4.48.0" \
@@ -43,7 +44,7 @@ RUN uv pip install --system \
     tqdm \
     pandas \
     huggingface_hub \
-    qwen-tts \
+    qwen-tts
 
 # 6. Fix Torch Vision/Audio (Reinstall compatible versions)
 RUN uv pip install --system \
@@ -55,9 +56,8 @@ RUN uv pip install --system \
 RUN uv pip install --system -r /opt/LuxTTS/requirements.txt
 
 # 8. THE GLOBAL IMPORT FIX
-# Adding /opt/LuxTTS to PYTHONPATH makes the 'zipvoice' module 
-# available to any script running in the container.
-ENV PYTHONPATH="/opt/LuxTTS:${PYTHONPATH}"
+# FIX: Removed the undefined ${PYTHONPATH} to clear the Docker warning
+ENV PYTHONPATH="/opt/LuxTTS"
 
 # 9. Pre-download Weights
 RUN python3 -c "from huggingface_hub import snapshot_download; \
