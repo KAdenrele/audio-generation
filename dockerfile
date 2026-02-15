@@ -45,7 +45,8 @@ RUN uv pip install --system \
     tqdm \
     pandas \
     huggingface_hub \
-    qwen-tts
+    qwen-tts \
+    chatterbox-tts
 
 # 6. Fix Torch Vision/Audio (Reinstall compatible versions)
 RUN uv pip install --system \

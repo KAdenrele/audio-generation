@@ -3,6 +3,7 @@ import os
 import sys
 from src.qwen_runner import run_qwen3_batch
 from src.lux_runner import run_lux_batch
+from src.chatterbox_runner import run_chatterbox_batch
 import logging
 # from lux_runner import run_lux_batch
 
@@ -10,6 +11,7 @@ import logging
 # Configuration
 PROMPT_FILE = "prompts.csv"
 OUTPUT_DIR = "generated_dataset"
+CHATTERBOX_REF_CLIP = "ref_clip.m4a"
 
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
@@ -38,17 +40,26 @@ def main():
         logging.error(f"Error reading CSV: {e}")
         return
 
-    # 2. Run Qwen3
-    # We wrap this in a try/except so main doesn't crash if Qwen fails
+    #Run Qwen3
     # try:
     #     run_qwen3_batch(prompts, OUTPUT_DIR)
     # except Exception as e:
     #     logging.error(f"Qwen execution halted: {e}")
 
+    #Run Lux
+    # try:
+    #     run_lux_batch(prompts, OUTPUT_DIR)
+    # except Exception as e:
+    #     logging.error(f"Skipping Lux due to error: {e}")
+
+    # 4. Run Chatterbox
     try:
-        run_lux_batch(prompts, OUTPUT_DIR)
+        if not os.path.exists(CHATTERBOX_REF_CLIP):
+            logging.warning(f"Chatterbox reference clip '{CHATTERBOX_REF_CLIP}' not found. Skipping.")
+        else:
+            run_chatterbox_batch(prompts, CHATTERBOX_REF_CLIP, OUTPUT_DIR)
     except Exception as e:
-        logging.error(f"Skipping Lux due to error: {e}")
+        logging.error(f"Skipping Chatterbox due to error: {e}")
 
 if __name__ == "__main__":
     main()
